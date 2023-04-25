@@ -37,25 +37,37 @@ def lp_model(model):
 
     lp = h.getLp()
     num_nz = h.getNumNz()
-    print('LP has ', lp.num_col_, ' columns', lp.num_row_, ' rows and ', num_nz, ' nonzeros')
+    # print('LP has ', lp.num_col_, ' columns', lp.num_row_, ' rows and ', num_nz, ' nonzeros')
 
-    print("OOO", dir(h.getOptions()))
     h.changeObjectiveSense(highspy.ObjSense.kMaximize)
+
+    return h
+
+
+def solve_model(h):
     h.run()
-
     solution = h.getSolution()
-    basis = h.getBasis()
-    info = h.getInfo()
-    model_status = h.getModelStatus()
-    print('Model status = ', h.modelStatusToString(model_status))
-    print()
-    print('Optimal objective = ', info.objective_function_value)
-    print('Iteration count = ', info.simplex_iteration_count)
-    print('Primal solution status = ', h.solutionStatusToString(info.primal_solution_status))
-    print('Dual solution status = ', h.solutionStatusToString(info.dual_solution_status))
-    print('Basis validity = ', h.basisValidityToString(info.basis_validity))
 
-    print(solution.col_value)
+    return solution.col_value
+
+
+def create_optimized_graph(solution, graph):
+    optimized_graph = []
+    solution_i = 0
+    for row in graph:
+        optimized_row = []
+        for element in row:
+            solution_el = solution[solution_i]
+            if solution_el == 1:
+                optimized_row.append(element)
+            elif solution_el == 0:
+                pass
+            else:
+                print(f"IMPOSSIBLE VALUE {solution_el}")
+            solution_i += 1
+        optimized_graph.append(optimized_row)
+
+    return optimized_graph
 
 
 if __name__ == '__main__':
@@ -68,4 +80,6 @@ if __name__ == '__main__':
         []
     ]
     model = graph_model(simple_graph)
-    lp_model(model)
+    lp_model = lp_model(model)
+    solution = solve_model(lp_model)
+    optimized_graph = create_optimized_graph(solution, simple_graph)
