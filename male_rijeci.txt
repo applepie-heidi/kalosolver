@@ -1,0 +1,14 @@
+aa1bb
+bb1aa
+aa1cc
+cc1bb
+cc2bb
+cc3bb
+cc1dd
+dd1cc
+bb1dd
+bb1ka
+kalodont
+dd1ka
+dd2ka
+cc1cc
