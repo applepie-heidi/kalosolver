@@ -1,42 +1,32 @@
-import highspy
 import numpy as np
+from scipy import optimize
 
 
-def create_lp_model(model, costs):
+def solve_scipy_model(model, costs):
     edges_num = len(model[0])
 
-    h = highspy.Highs()
+    # Objective (target function to maximize)
+    # Max of: f = SUM(Xi)
+    objective = np.array([1] * edges_num)
 
-    for i in range(edges_num):
-        h.addVar(0, costs[i])
+    # Specify that all Xi are of type 1=integer
+    integrality = np.array([1] * edges_num)
 
-    for i in range(edges_num):
-        h.changeColCost(i, costs[i])
+    # Specify bounds (constraints) for each Xi:   Li <= Xi <= Ui
+    bounds = optimize.Bounds(
+        lb=np.array([0] * edges_num),
+        ub=np.array(costs)
+    )
 
-    for row_i in range(len(model)):
-        nz_num = 0
-        index = []
-        value = []
-        for col_i in range(len(model[row_i])):
-            coef = model[row_i][col_i]
-            if coef != 0:
-                nz_num += 1
-                index.append(col_i)
-                value.append(coef)
-        if row_i == 0:
-            h.addRow(-1, -1, nz_num, np.array(index), np.array(value))
-        elif row_i == len(model) - 1:
-            h.addRow(1, 1, nz_num, np.array(index), np.array(value))
-        else:
-            h.addRow(0, 0, nz_num, np.array(index), np.array(value))
+    # Constraints
+    cons_s = optimize.LinearConstraint(model[0], -1, -1)
+    cons_i = optimize.LinearConstraint(model[1:-1], 0, 0)
+    cons_t = optimize.LinearConstraint(model[-1], 1, 1)
+    constraints = [cons_s, cons_i, cons_t]
 
-    h.changeObjectiveSense(highspy.ObjSense.kMaximize)
-
-    return h
-
-
-def solve_lp_model(model):
-    model.run()
-    solution = model.getSolution()
-
-    return solution.col_value
+    # Negate objective => find MAX
+    res = optimize.milp(c=-objective, constraints=constraints, integrality=integrality, bounds=bounds)
+    print("==================")
+    print(res)
+    print("==================")
+    return res.x

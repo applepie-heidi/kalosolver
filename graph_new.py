@@ -1,9 +1,11 @@
+from collections import OrderedDict
+
 from word_grouper import parse_groups
 
 
 class Graph:
     def __init__(self, dictionary_filename):
-        self.graph = [{}]
+        self.graph = [OrderedDict()]
         self.vertices = ["s"]
         self.edges_num = 0
         self.groups = parse_groups(dictionary_filename)
@@ -14,34 +16,46 @@ class Graph:
 
         vertices_dict = {"s": 0}
         vertex_i = 1
-        for group, words in self.groups.items():
-            prefix = group[:2]
-            suffix = group[-2:]
-            if prefix not in vertices_dict:
-                self.vertices.append(prefix)
-                vertices_dict[prefix] = vertex_i
-                self.graph.append(dict())
-                self.graph[0][vertex_i] = 1
-                self.edges_num += 1
-                vertex_i += 1
-            if suffix not in vertices_dict:
-                self.vertices.append(suffix)
-                vertices_dict[suffix] = vertex_i
-                self.graph.append(dict())
-                self.graph[0][vertex_i] = 1
-                self.edges_num += 1
-                vertex_i += 1
-            out_vertex = vertices_dict.get(prefix)
-            in_vertex = vertices_dict.get(suffix)
+        with open(dictionary_filename, "r") as words_f:
+            lines = words_f.readlines()
+            for word in lines:
+                word = word[:-1]
+                if True: #not word.startswith("ka"):
+                    prefix = word[:2]
+                    suffix = word[-2:]
 
-            self.graph[out_vertex].setdefault(in_vertex, self.graph[out_vertex].get(in_vertex, len(words)))
-            self.edges_num += 1
+                    if prefix not in vertices_dict:
+                        self.vertices.append(prefix)
+                        vertices_dict[prefix] = vertex_i
+                        self.graph.append(OrderedDict())
+                        self.graph[0][vertex_i] = 1
+                        self.edges_num += 1
+                        vertex_i += 1
+                    if suffix not in vertices_dict:
+                        self.vertices.append(suffix)
+                        vertices_dict[suffix] = vertex_i
+                        self.graph.append(OrderedDict())
+                        self.graph[0][vertex_i] = 1
+                        self.edges_num += 1
+                        vertex_i += 1
+                    out_vertex = vertices_dict.get(prefix)
+                    in_vertex = vertices_dict.get(suffix)
+                    get = self.graph[out_vertex].get(in_vertex, 0)
+                    self.graph[out_vertex][in_vertex] = get + 1
+                    if not get:
+                        self.edges_num += 1
 
         self.vertices.append("t")
-        self.graph.append(dict())
+        self.graph.append(OrderedDict())
 
-        self.graph[vertices_dict["ka"]][vertex_i] = 1
-        self.edges_num += 1
+        if 0:
+            self.graph[vertices_dict["nt"]][vertex_i] = 1
+            self.edges_num += 1
+        else:
+            for i in range(1, len(self.graph)-1):
+                self.graph[i][vertex_i] = 1
+                self.edges_num += 1
+        print("Number of edges", self.edges_num)
 
     def create_graph_model(self):
         row_num = len(self.graph)

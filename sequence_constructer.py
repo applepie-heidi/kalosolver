@@ -23,8 +23,7 @@ def extract_shortest_circuits(graph):
                     else:
                         w = circuit[0]
                     for j in range(len(graph_copy[v])):
-                        node = graph_copy[v][j][0]
-                        cost = graph_copy[v][j][1]
+                        node, cost = graph_copy[v][j]
                         if node == w:
                             if cost > 1:
                                 graph_copy[v][j] = (w, cost - 1)
