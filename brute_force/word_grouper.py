@@ -29,7 +29,7 @@ def parse_groups(filename):
 
 
 def main():
-    groups = parse_groups("rijeci.txt")
+    groups = parse_groups("../rijeci.txt")
 
     with open("groups_wc.txt", "w") as groups_wc_f:
         for group, words in sorted(groups.items()):

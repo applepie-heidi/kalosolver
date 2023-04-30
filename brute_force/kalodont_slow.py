@@ -20,7 +20,7 @@ class Node:
 class Graph:
     def __init__(self):
         self.head = Node("kant", 1)
-        self.groups = parse_groups("rijeci.txt")
+        self.groups = parse_groups("../rijeci.txt")
         self.nodes = {}
         self.max_kalodont = []
         self.counter = 0
