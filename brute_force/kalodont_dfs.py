@@ -2,7 +2,7 @@ import resource
 import sys
 import time
 
-from word_grouper import parse_groups
+from groups import parse_groups
 
 resource.setrlimit(resource.RLIMIT_STACK, (2 ** 29, -1))
 sys.setrecursionlimit(10 ** 6)
