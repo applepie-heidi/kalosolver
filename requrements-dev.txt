@@ -1,5 +1,4 @@
 -r requirements.txt
 
 jupyterlab
-# matplotlib
 pygraphviz    # sudo apt-get install graphviz graphviz-dev

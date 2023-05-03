@@ -1,11 +1,13 @@
-import os
+import sys
 
-with open("best_recursive_1674759469.txt", "r") as best_file:
+filename = sys.argv[1] if len(sys.argv) > 1 else "best_recursive_1683119746.txt"
+
+with open(filename, "r") as best_file:
     seen = set()
     words = best_file.readline().split(" ")
     previous = ""
     for word in words:
-        if previous:
+        if previous and word:
             if word in seen:
                 print(f"DUPLICATE: {word}")
                 exit()

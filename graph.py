@@ -1,121 +1,74 @@
+import sys
+from typing import List, Optional, Tuple, Union
+
+Name = Union[str, int]
+Node = int
+Weight = int
+Edge = Tuple[Node, Weight]
+Edges = List[Edge]
+
+__all__ = ["Graph", "Node", "Edge", "Edges", "Name", "Weight"]
 
 
 class Graph:
-    def __init__(self, *, file=None, filename=None):
-        self.graph = [dict()]
-        self.vertices = ["s"]
-        self.edges_num = 0
-        self.max_kalodont = []
-        self.best_filename = ""
-        self.data_filename = ""
-        self.current_filename = ""
-        if (file and filename) or (not file and not filename):
-            raise Exception("Must specify exactly file or filename")
+    def __init__(self):
+        self._name_to_node = {}  # node names are mapped to node numbers
+        self._nodes = []  # node names are stored in a list
+        self._edges = []  # individual node's edges are stored in a dict
 
-        vertices_dict = {"s": 0}
-        vertex_i = 1
-        with Autofile(file, filename) as f:
-            for word in f:
-                word = word.strip().lower()
-                if True:  # not word.startswith("ka"):
-                    prefix = word[:2]
-                    suffix = word[-2:]
+    def add_node(self, name: Name) -> Node:
+        node: Node = self._name_to_node.get(name)
+        if node is None:
+            node = len(self._nodes)
+            self._nodes.append(name)
+            self._edges.append({})
+            self._name_to_node[name] = node
+        return node
 
-                    if prefix not in vertices_dict:
-                        self.vertices.append(prefix)
-                        vertices_dict[prefix] = vertex_i
-                        self.graph.append(dict())
-                        self.graph[0][vertex_i] = 1
-                        self.edges_num += 1
-                        vertex_i += 1
-                    if suffix not in vertices_dict:
-                        self.vertices.append(suffix)
-                        vertices_dict[suffix] = vertex_i
-                        self.graph.append(dict())
-                        self.graph[0][vertex_i] = 1
-                        self.edges_num += 1
-                        vertex_i += 1
-                    out_vertex = vertices_dict.get(prefix)
-                    in_vertex = vertices_dict.get(suffix)
-                    get = self.graph[out_vertex].get(in_vertex, 0)
-                    self.graph[out_vertex][in_vertex] = get + 1
-                    if not get:
-                        self.edges_num += 1
+    def add_edge(self, node1: Node, node2: Node, delta_weight: int = 1) -> Edge:
+        edges = self._edges[node1]
+        edges[node2] = edges.get(node2, 0) + delta_weight
+        return (node2, delta_weight)
 
-        self.vertices.append("t")
-        self.graph.append(dict())
+    def name(self, node: Node) -> Name:
+        return self._nodes[node]
 
-        if 1:
-            self.graph[vertices_dict["nt"]][vertex_i] = 1
-            self.edges_num += 1
-        else:
-            for i in range(1, len(self.graph) - 1):
-                self.graph[i][vertex_i] = 1
-                self.edges_num += 1
-                
-        # turn graph into list of lists
-        self.graph = [list(row.items()) for row in self.graph]
+    def node(self, name: Name) -> Optional[Node]:
+        return self._name_to_node.get(name)
 
-        print("Number of edges", self.edges_num)
+    def nodes(self) -> List[Node]:
+        return range(len(self._nodes))
 
-    def create_graph_model(self):
-        row_num = len(self.graph)
-        graph_model = [[0 for _ in range(self.edges_num)] for _ in range(row_num)]
-        costs = []
-        variables = []
-        loop_variables = []
-        element_i = 0
-        loop_element_i = self.edges_num
-        loop_costs = []
-        for out_row_i in range(row_num):
-            for in_row_i, cost in self.graph[out_row_i]:
-                if out_row_i != in_row_i:
-                    graph_model[out_row_i][element_i] = -1
-                    graph_model[in_row_i][element_i] = 1
-                    costs.append(cost)
-                    variables.append((out_row_i, in_row_i))
-                    element_i += 1
-                else:
-                    for i in range(row_num):
-                        graph_model[i].append(0)
-                    graph_model[out_row_i][element_i] = -1
-                    graph_model[in_row_i][loop_element_i] = 1
-                    costs.append(cost)
-                    loop_costs.append(cost)
-                    variables.append((out_row_i, in_row_i))
-                    loop_variables.append((out_row_i, in_row_i))
-                    element_i += 1
-                    loop_element_i += 1
-        costs.extend(loop_costs)
-        variables.extend(loop_variables)
-        return graph_model, costs, variables
+    def edges(self, node: Node) -> Edges:
+        return self._edges[node].items()
 
-    def create_optimized_graph(self, lp_solution, variables):
-        optimized_graph = [[] for _ in range(len(self.graph))]
-        solution_i = 0
-        set_nodes = set()
-        for i, x in enumerate(lp_solution):
-            if x > 0:
-                xi0, xi1 = variables[i]
-                if xi0 == xi1:
-                    if xi0 not in set_nodes:
-                        optimized_graph[xi0].append((xi1, x))
-                        set_nodes.add(xi0)
-                else:
-                    optimized_graph[xi0].append((xi1, x))
-        '''for row in self.graph:
-            optimized_row = []
-            for node, cost in row:
-                x_i = lp_solution[solution_i]
-                if x_i > 0:
-                    optimized_row.append((node, x_i))
-                solution_i += 1
-            optimized_graph.append(optimized_row)'''
-        return optimized_graph
+    def node_count(self) -> int:
+        return len(self._nodes)
+
+    def edge_count(self) -> int:
+        return sum(len(edges) for edges in self._edges)
+
+    def modify_edge(self, node1: Node, node2: Node, delta_weight: int) -> Edge:
+        n, weight = self.add_edge(node1, node2, delta_weight)
+        if weight == 0:
+            del self._edges[node1][node2]
+        return (n, weight)
+
+    def edge(self, node1: Node, node2: Node) -> Edge:
+        return (node2, self._edges[node1].get(node2, 0))
+
+    def info(self):
+        edges = 0
+        total = 0
+        for node in self.nodes():
+            for _edge, weight in self.edges(node):
+                edges += 1
+                total += weight
+        return {"nodes": self.node_count(), "edges": edges, "weighted edges": total}
 
 
-def debug_print_optimized_graph_info(optimized_graph):
-    remaining = list(range(len(optimized_graph)))
+def debug_print_graph_subsets(graph: Graph):
+    remaining = list(graph.nodes())
     counts = {}
     while remaining:
         node = remaining[0]
@@ -129,25 +82,16 @@ def debug_print_optimized_graph_info(optimized_graph):
             if n not in visited:
                 visited.append(n)
                 remaining.remove(n)
-                for next_n, cost in optimized_graph[n]:
+                for next_n, weight in graph.edges(n):
                     stack.append(next_n)
-                    total_cost += cost
+                    total_cost += weight
+
         old = counts.get(len(visited), (0, 0))
         counts[len(visited)] = old[0] + 1, old[1] + total_cost
+
     for num_nodes, (graph_cnt, total_cost) in counts.items():
-        print(f"- Found {graph_cnt:3} graph(s) with {num_nodes:3} nodes and total cost {total_cost}")
-
-
-class Autofile:
-    def __init__(self, file, filename):
-        self.file = file
-        self.filename = filename
-
-    def __enter__(self):
-        if not self.file:
-            self.file = open(self.filename, "r")
-        return self.file
-
-    def __exit__(self, *args):
-        if self.filename:
-            self.file.close()
+        print(
+            f"- Found {graph_cnt:3} graph(s) with {num_nodes:3} nodes "
+            f"and total cost {total_cost}",
+            file=sys.stderr,
+        )
